@@ -247,7 +247,7 @@ function AdminPage() {
                                 <TableCell>{r.guests}</TableCell>
                                 <TableCell>{r.table?.name ?? "—"}</TableCell>
                                 <TableCell><Badge variant={r.status === "active" ? "default" : "secondary"} className="shadow-sm">{r.status}</Badge></TableCell>
-                                <TableCell className="text-right space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <TableCell className="text-right space-x-1 transition-opacity">
                                   {r.status === "active" && (
                                     <Button variant="ghost" size="sm" onClick={() => cancel(r._id)}>
                                       <XCircle className="h-4 w-4" />
@@ -322,7 +322,7 @@ function AdminPage() {
                                 <TableCell className="font-medium">{t.name}</TableCell>
                                 <TableCell>{t.capacity}</TableCell>
                                 <TableCell className="text-right">
-                                  <Button variant="ghost" size="sm" onClick={() => removeTable(t.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button variant="ghost" size="sm" onClick={() => removeTable(t.id)} className="transition-opacity">
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </TableCell>

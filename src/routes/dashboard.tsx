@@ -306,7 +306,7 @@ function Dashboard() {
                             </TableCell>
                             <TableCell className="text-right">
                               {r.status === "active" && (
-                                <Button variant="ghost" size="sm" onClick={() => cancel(r._id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="sm" onClick={() => cancel(r._id)} className="opacity-100 visible flex items-center">
                                   <XCircle className="h-4 w-4 mr-1 text-destructive" /> <span className="text-destructive">Cancel</span>
                                 </Button>
                               )}

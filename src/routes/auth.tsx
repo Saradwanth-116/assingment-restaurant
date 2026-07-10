@@ -44,7 +44,7 @@ function AuthPage() {
     e.preventDefault();
     setUserLoading(true);
     const endpoint = userMode === "signin" ? "/api/auth/login" : "/api/auth/register";
-    const body = userMode === "signin" 
+    const body = userMode === "signin"
       ? JSON.stringify({ email: userEmail, password: userPassword })
       : JSON.stringify({ name: userName, email: userEmail, password: userPassword, role: "user" });
 
@@ -54,9 +54,9 @@ function AuthPage() {
         headers: { 'Content-Type': 'application/json' },
         body
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         toast.error(data.message || (userMode === 'signin' ? 'Login failed' : 'Registration failed'));
       } else {
@@ -81,9 +81,9 @@ function AuthPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: adminEmail, password: adminPassword })
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         toast.error(data.message || 'Login failed');
       } else {
@@ -93,7 +93,7 @@ function AuthPage() {
           localStorage.setItem('token', data.token);
           window.dispatchEvent(new Event("auth-change"));
           toast.success("Admin signed in");
-          navigate({ to: "/admin" }); 
+          navigate({ to: "/admin" });
         }
       }
     } catch (err) {
@@ -105,7 +105,7 @@ function AuthPage() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 overflow-hidden relative bg-transparent">
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: "easeOut" }}
@@ -118,21 +118,21 @@ function AuthPage() {
         <p className="text-muted-foreground mt-2 text-lg">Welcome! Please choose your portal.</p>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: 0.2 }}
         className="flex gap-4 mb-8 z-10"
       >
-        <Button 
-          variant={activeTab === "customer" ? "default" : "secondary"} 
+        <Button
+          variant={activeTab === "customer" ? "default" : "secondary"}
           className="w-36 flex gap-2 shadow-md transition-all duration-300"
           onClick={() => setActiveTab("customer")}
         >
           <User className="h-4 w-4" /> Customer
         </Button>
-        <Button 
-          variant={activeTab === "admin" ? "default" : "secondary"} 
+        <Button
+          variant={activeTab === "admin" ? "default" : "secondary"}
           className="w-36 flex gap-2 shadow-md transition-all duration-300"
           onClick={() => setActiveTab("admin")}
         >
@@ -183,7 +183,7 @@ function AuthPage() {
                       {userLoading ? "Please wait..." : (userMode === "signin" ? "Sign in" : "Create account")}
                     </Button>
                   </form>
-                  
+
                   <div className="mt-5 text-center text-sm">
                     {userMode === "signin" ? (
                       <p>Don't have an account? <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => setUserMode("signup")}>Sign up</Button></p>

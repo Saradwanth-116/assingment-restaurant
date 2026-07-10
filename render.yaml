@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: tavola-app
+    env: node
+    buildCommand: npm install && npm run build && cd backend && npm install
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: MONGO_URI
+        value: mongodb+srv://gigachad:gigachad6767@cluster0.eomi7vx.mongodb.net/?appName=Cluster0
+      - key: NODE_ENV
+        value: production

@@ -6,8 +6,18 @@ export const Route = createFileRoute("/api/public/seed")({
     handlers: {
       POST: async () => {
         const demos = [
-          { email: "admin@demo.com", password: "password123", role: "admin" as const, name: "Admin" },
-          { email: "user@demo.com", password: "password123", role: "user" as const, name: "Demo User" },
+          {
+            email: "admin@demo.com",
+            password: "password123",
+            role: "admin" as const,
+            name: "Admin",
+          },
+          {
+            email: "user@demo.com",
+            password: "password123",
+            role: "user" as const,
+            name: "Demo User",
+          },
         ];
 
         for (const d of demos) {
@@ -15,7 +25,7 @@ export const Route = createFileRoute("/api/public/seed")({
             await fetch("/api/auth/register", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(d)
+              body: JSON.stringify(d),
             });
           } catch (e) {
             console.error("Seed error", e);

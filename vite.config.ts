@@ -10,12 +10,12 @@ export default defineConfig({
   vite: {
     server: {
       proxy: {
-        '/api': {
-          target: 'http://localhost:5000',
-          changeOrigin: true
-        }
-      }
-    }
+        "/api": {
+          target: "http://localhost:5000",
+          changeOrigin: true,
+        },
+      },
+    },
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).

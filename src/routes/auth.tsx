@@ -35,7 +35,7 @@ function AuthPage() {
   const [adminLoading, setAdminLoading] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('token')) {
+    if (localStorage.getItem("token")) {
       navigate({ to: "/dashboard" });
     }
   }, [navigate]);
@@ -44,29 +44,37 @@ function AuthPage() {
     e.preventDefault();
     setUserLoading(true);
     const endpoint = userMode === "signin" ? "/api/auth/login" : "/api/auth/register";
-    const body = userMode === "signin"
-      ? JSON.stringify({ email: userEmail, password: userPassword })
-      : JSON.stringify({ name: userName, email: userEmail, password: userPassword, role: "user" });
+    const body =
+      userMode === "signin"
+        ? JSON.stringify({ email: userEmail, password: userPassword })
+        : JSON.stringify({
+            name: userName,
+            email: userEmail,
+            password: userPassword,
+            role: "user",
+          });
 
     try {
       const res = await fetch(`${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message || (userMode === 'signin' ? 'Login failed' : 'Registration failed'));
+        toast.error(
+          data.message || (userMode === "signin" ? "Login failed" : "Registration failed"),
+        );
       } else {
-        localStorage.setItem('token', data.token);
+        localStorage.setItem("token", data.token);
         window.dispatchEvent(new Event("auth-change"));
         toast.success(userMode === "signin" ? "Signed in" : "Account created");
         navigate({ to: "/dashboard" });
       }
     } catch (err) {
-      toast.error('Network error');
+      toast.error("Network error");
     } finally {
       setUserLoading(false);
     }
@@ -76,28 +84,28 @@ function AuthPage() {
     e.preventDefault();
     setAdminLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: adminEmail, password: adminPassword })
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: adminEmail, password: adminPassword }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        toast.error(data.message || 'Login failed');
+        toast.error(data.message || "Login failed");
       } else {
-        if (data.user.role !== 'admin') {
+        if (data.user.role !== "admin") {
           toast.error("This portal is for administrators only");
         } else {
-          localStorage.setItem('token', data.token);
+          localStorage.setItem("token", data.token);
           window.dispatchEvent(new Event("auth-change"));
           toast.success("Admin signed in");
           navigate({ to: "/admin" });
         }
       }
     } catch (err) {
-      toast.error('Network error');
+      toast.error("Network error");
     } finally {
       setAdminLoading(false);
     }
@@ -160,40 +168,95 @@ function AuthPage() {
                     <AnimatePresence>
                       {userMode === "signup" && (
                         <motion.div
-                          initial={{ opacity: 0, height: 0, overflow: 'hidden' }}
-                          animate={{ opacity: 1, height: 'auto', overflow: 'visible' }}
-                          exit={{ opacity: 0, height: 0, overflow: 'hidden' }}
+                          initial={{ opacity: 0, height: 0, overflow: "hidden" }}
+                          animate={{ opacity: 1, height: "auto", overflow: "visible" }}
+                          exit={{ opacity: 0, height: 0, overflow: "hidden" }}
                           transition={{ duration: 0.3 }}
                           className="space-y-2"
                         >
                           <Label htmlFor="userName">Name</Label>
-                          <Input id="userName" required value={userName} onChange={(e) => setUserName(e.target.value)} className="bg-background/50" />
+                          <Input
+                            id="userName"
+                            required
+                            value={userName}
+                            onChange={(e) => setUserName(e.target.value)}
+                            className="bg-background/50"
+                          />
                         </motion.div>
                       )}
                     </AnimatePresence>
                     <div className="space-y-2">
                       <Label htmlFor="userEmail">Email</Label>
-                      <Input id="userEmail" type="email" required value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="bg-background/50" />
+                      <Input
+                        id="userEmail"
+                        type="email"
+                        required
+                        value={userEmail}
+                        onChange={(e) => setUserEmail(e.target.value)}
+                        className="bg-background/50"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="userPassword">Password</Label>
-                      <Input id="userPassword" type="password" required value={userPassword} onChange={(e) => setUserPassword(e.target.value)} className="bg-background/50" />
+                      <Input
+                        id="userPassword"
+                        type="password"
+                        required
+                        value={userPassword}
+                        onChange={(e) => setUserPassword(e.target.value)}
+                        className="bg-background/50"
+                      />
                     </div>
-                    <Button type="submit" className="w-full shadow-lg hover:shadow-primary/25 transition-all" disabled={userLoading}>
-                      {userLoading ? "Please wait..." : (userMode === "signin" ? "Sign in" : "Create account")}
+                    <Button
+                      type="submit"
+                      className="w-full shadow-lg hover:shadow-primary/25 transition-all"
+                      disabled={userLoading}
+                    >
+                      {userLoading
+                        ? "Please wait..."
+                        : userMode === "signin"
+                          ? "Sign in"
+                          : "Create account"}
                     </Button>
                   </form>
 
                   <div className="mt-5 text-center text-sm">
                     {userMode === "signin" ? (
-                      <p>Don't have an account? <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => setUserMode("signup")}>Sign up</Button></p>
+                      <p>
+                        Don't have an account?{" "}
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto font-semibold"
+                          onClick={() => setUserMode("signup")}
+                        >
+                          Sign up
+                        </Button>
+                      </p>
                     ) : (
-                      <p>Already have an account? <Button variant="link" className="p-0 h-auto font-semibold" onClick={() => setUserMode("signin")}>Sign in</Button></p>
+                      <p>
+                        Already have an account?{" "}
+                        <Button
+                          variant="link"
+                          className="p-0 h-auto font-semibold"
+                          onClick={() => setUserMode("signin")}
+                        >
+                          Sign in
+                        </Button>
+                      </p>
                     )}
                   </div>
 
                   <div className="mt-6 border-t border-border/40 pt-4 text-center">
-                    <Button variant="ghost" size="sm" onClick={() => { setUserMode("signin"); setUserEmail("user@demo.com"); setUserPassword("password123"); }} className="w-full opacity-70 hover:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setUserMode("signin");
+                        setUserEmail("user@demo.com");
+                        setUserPassword("password123");
+                      }}
+                      className="w-full opacity-70 hover:opacity-100"
+                    >
                       Quick fill: Demo Customer
                     </Button>
                   </div>
@@ -222,19 +285,46 @@ function AuthPage() {
                   <form onSubmit={onAdminSubmit} className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="adminEmail">Admin Email</Label>
-                      <Input id="adminEmail" type="email" required value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} className="bg-background/50" />
+                      <Input
+                        id="adminEmail"
+                        type="email"
+                        required
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        className="bg-background/50"
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="adminPassword">Password</Label>
-                      <Input id="adminPassword" type="password" required value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="bg-background/50" />
+                      <Input
+                        id="adminPassword"
+                        type="password"
+                        required
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        className="bg-background/50"
+                      />
                     </div>
-                    <Button type="submit" variant="default" className="w-full shadow-lg" disabled={adminLoading}>
+                    <Button
+                      type="submit"
+                      variant="default"
+                      className="w-full shadow-lg"
+                      disabled={adminLoading}
+                    >
                       {adminLoading ? "Signing in..." : "Sign in securely"}
                     </Button>
                   </form>
 
                   <div className="mt-[56px] border-t border-border/40 pt-4 text-center">
-                    <Button variant="ghost" size="sm" onClick={() => { setAdminEmail("admin@demo.com"); setAdminPassword("password123"); }} className="w-full opacity-70 hover:opacity-100">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setAdminEmail("admin@demo.com");
+                        setAdminPassword("password123");
+                      }}
+                      className="w-full opacity-70 hover:opacity-100"
+                    >
                       Quick fill: Demo Admin
                     </Button>
                   </div>

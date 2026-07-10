@@ -1,28 +1,28 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
-const { authMiddleware } = require('../middleware/auth');
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
+const { authMiddleware } = require("../middleware/auth");
 
 // @route   POST /api/auth/register
 // @desc    Register user
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
     // Check if user exists
     let user = await User.findOne({ email });
     if (user) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: "User already exists" });
     }
 
     user = new User({
       name,
       email,
       password,
-      role: role || 'user',
+      role: role || "user",
     });
 
     // Hash password
@@ -35,77 +35,73 @@ router.post('/register', async (req, res) => {
     const payload = {
       user: {
         id: user.id,
-        role: user.role
+        role: user.role,
       },
     };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5 days' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-      }
-    );
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "5 days" }, (err, token) => {
+      if (err) throw err;
+      res.json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
 // @route   POST /api/auth/login
 // @desc    Authenticate user & get token
 // @access  Public
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
     // Check if user exists
     let user = await User.findOne({ email });
     if (!user) {
-      return res.status(400).json({ message: 'Invalid Credentials' });
+      return res.status(400).json({ message: "Invalid Credentials" });
     }
 
     // Compare password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid Credentials' });
+      return res.status(400).json({ message: "Invalid Credentials" });
     }
 
     // Return jsonwebtoken
     const payload = {
       user: {
         id: user.id,
-        role: user.role
+        role: user.role,
       },
     };
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '5 days' },
-      (err, token) => {
-        if (err) throw err;
-        res.json({ token, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-      }
-    );
+    jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "5 days" }, (err, token) => {
+      if (err) throw err;
+      res.json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      });
+    });
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server error');
+    res.status(500).send("Server error");
   }
 });
 
 // @route   GET /api/auth/me
 // @desc    Get logged in user
 // @access  Private
-router.get('/me', authMiddleware, async (req, res) => {
+router.get("/me", authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select('-password');
+    const user = await User.findById(req.user.id).select("-password");
     res.json(user);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
+    res.status(500).send("Server Error");
   }
 });
 

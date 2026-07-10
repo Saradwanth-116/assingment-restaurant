@@ -78,9 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Tavola — Restaurant Reservations" },
-      { name: "description", content: "Book restaurant tables and manage reservations with Tavola." },
+      {
+        name: "description",
+        content: "Book restaurant tables and manage reservations with Tavola.",
+      },
       { property: "og:title", content: "Tavola — Restaurant Reservations" },
-      { property: "og:description", content: "Book restaurant tables and manage reservations with Tavola." },
+      {
+        property: "og:description",
+        content: "Book restaurant tables and manage reservations with Tavola.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

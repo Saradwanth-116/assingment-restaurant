@@ -15,21 +15,21 @@ export function useAuth() {
 
   useEffect(() => {
     let mounted = true;
-    
+
     const fetchUser = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
         if (mounted) setLoading(false);
         return;
       }
 
       try {
-        const res = await fetch('/api/auth/me', {
+        const res = await fetch("/api/auth/me", {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
-        
+
         if (res.ok) {
           const data = await res.json();
           if (mounted) {
@@ -38,7 +38,7 @@ export function useAuth() {
           }
         } else {
           // invalid token
-          localStorage.removeItem('token');
+          localStorage.removeItem("token");
         }
       } catch (e) {
         console.error("Auth fetch error", e);
@@ -48,16 +48,16 @@ export function useAuth() {
     };
 
     fetchUser();
-    
+
     // Add event listener to handle login/logout across tabs or from components
     const handleStorageChange = () => fetchUser();
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('auth-change', handleStorageChange);
+    window.addEventListener("storage", handleStorageChange);
+    window.addEventListener("auth-change", handleStorageChange);
 
     return () => {
       mounted = false;
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('auth-change', handleStorageChange);
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("auth-change", handleStorageChange);
     };
   }, []);
 

@@ -13,8 +13,12 @@ export const Route = createFileRoute("/")({
 function Index() {
   const navigate = useNavigate();
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     navigate({ to: token ? "/dashboard" : "/auth" });
   }, [navigate]);
-  return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  return (
+    <div className="min-h-screen flex items-center justify-center text-muted-foreground">
+      Loading…
+    </div>
+  );
 }

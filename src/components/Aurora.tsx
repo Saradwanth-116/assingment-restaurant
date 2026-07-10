@@ -15,14 +15,14 @@ export const Aurora = ({
   return (
     <div className={cn("fixed inset-0 z-[-1] overflow-hidden bg-slate-50", className)} {...props}>
       <div
-        className="absolute -inset-[50%] opacity-[0.48] blur-[100px] filter"
+        className="absolute w-[300vw] h-[300vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.48] blur-[100px] filter"
         style={{
           background: `conic-gradient(from 90deg at 50% 50%, ${colorStops[0]}, ${colorStops[1]}, ${colorStops[2]}, ${colorStops[0]})`,
           animation: "spin 10s linear infinite",
         }}
       />
       <div
-        className="absolute -inset-[50%] opacity-[0.48] blur-[100px] filter"
+        className="absolute w-[300vw] h-[300vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.48] blur-[100px] filter"
         style={{
           background: `conic-gradient(from 270deg at 50% 50%, ${colorStops[2]}, ${colorStops[1]}, ${colorStops[0]}, ${colorStops[2]})`,
           animation: "spin 30s linear infinite reverse",

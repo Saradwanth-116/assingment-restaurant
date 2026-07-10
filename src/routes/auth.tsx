@@ -104,7 +104,7 @@ function AuthPage() {
   };
 
   return (
-    <main className="ambient-bg min-h-screen flex flex-col items-center justify-center px-4 py-8 overflow-hidden relative">
+    <main className="min-h-screen flex flex-col items-center justify-center px-4 py-8 overflow-hidden relative bg-transparent">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}

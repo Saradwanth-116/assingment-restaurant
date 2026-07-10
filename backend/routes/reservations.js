@@ -13,12 +13,17 @@ router.get("/", authMiddleware, async (req, res) => {
     if (req.user.role === "admin") {
       reservations = await Reservation.find()
         .populate("user", "name email")
-        .populate("table", "name capacity");
+        .populate({
+          path: "table",
+          select: "name capacity restaurant",
+          populate: { path: "restaurant", select: "name location" },
+        });
     } else {
-      reservations = await Reservation.find({ user: req.user.id }).populate(
-        "table",
-        "name capacity",
-      );
+      reservations = await Reservation.find({ user: req.user.id }).populate({
+        path: "table",
+        select: "name capacity restaurant",
+        populate: { path: "restaurant", select: "name location" },
+      });
     }
     res.json(reservations);
   } catch (err) {
@@ -47,18 +52,19 @@ router.post("/", authMiddleware, async (req, res) => {
         .json({ message: `Guest count (${guests}) exceeds table capacity (${table.capacity})` });
     }
 
-    // Validation: Prevent overlapping reservations
-    const existingReservation = await Reservation.findOne({
+    // Validation: Prevent overlapping reservations exceeding table quantity
+    const activeReservationsCount = await Reservation.countDocuments({
       table: tableId,
       reservationDate,
       timeSlot,
       status: "active",
     });
 
-    if (existingReservation) {
+    const quantity = table.quantity || 1;
+    if (activeReservationsCount >= quantity) {
       return res
         .status(400)
-        .json({ message: "This table is already booked for the selected time slot" });
+        .json({ message: "All tables of this type are already booked for the selected time slot" });
     }
 
     // Create reservation

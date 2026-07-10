@@ -18,7 +18,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { formatDate, todayISO } from "@/lib/reservations";
 import { toast } from "sonner";
-import { Plus, Trash2, XCircle, Loader2 } from "lucide-react";
+import { UtensilsCrossed, Plus, Trash2, CalendarX, Edit2, Loader2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export const Route = createFileRoute("/admin")({
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type RTable = { id: string; name: string; capacity: number };
+type RTable = { id: string; name: string; capacity: number; quantity: number };
 type ResRow = {
   _id: string;
   reservationDate: string;
@@ -60,9 +60,13 @@ function AdminPage() {
   const { user, role, loading: authLoading } = useAuth();
   const [rows, setRows] = useState<ResRow[]>([]);
   const [tables, setTables] = useState<RTable[]>([]);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState<string>("");
-  const [newTable, setNewTable] = useState({ name: "", capacity: 2 });
+  const [activeTab, setActiveTab] = useState("reservations");
+  const [newTable, setNewTable] = useState({ name: "", capacity: 2, quantity: 1, restaurantId: "" });
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [newRestaurant, setNewRestaurant] = useState({ name: "", location: "", cuisine: "", costForTwo: 500 });
 
   useEffect(() => {
     if (authLoading) return;
@@ -115,10 +119,28 @@ function AdminPage() {
     }
   };
 
+  const loadRestaurants = async () => {
+    try {
+      const res = await fetch("/api/restaurants", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRestaurants(data);
+        if (data.length > 0 && !newTable.restaurantId) {
+          setNewTable(prev => ({ ...prev, restaurantId: data[0]._id }));
+        }
+      }
+    } catch (e) {
+      toast.error("Network error loading restaurants");
+    }
+  };
+
   useEffect(() => {
     if (role === "admin") {
       load();
       loadTables();
+      loadRestaurants();
     }
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -149,27 +171,52 @@ function AdminPage() {
 
   const addTable = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newTable.name.trim()) return;
+    if (!newTable.name.trim() || !newTable.restaurantId) return;
     try {
-      const res = await fetch("/api/tables", {
-        method: "POST",
+      const isEditing = !!editingTableId;
+      const url = isEditing ? `/api/tables/${editingTableId}` : "/api/tables";
+      const method = isEditing ? "PUT" : "POST";
+      
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name: newTable.name.trim(), capacity: Number(newTable.capacity) }),
+        body: JSON.stringify({ 
+          name: newTable.name.trim(), 
+          capacity: Number(newTable.capacity), 
+          quantity: Number(newTable.quantity),
+          restaurantId: newTable.restaurantId 
+        }),
       });
       if (res.ok) {
-        setNewTable({ name: "", capacity: 2 });
-        toast.success("Table added");
+        setNewTable({ name: "", capacity: 2, quantity: 1, restaurantId: newTable.restaurantId });
+        setEditingTableId(null);
+        toast.success(isEditing ? "Table updated" : "Table added");
         loadTables();
       } else {
         const data = await res.json();
-        toast.error(data.message || "Failed to add table");
+        toast.error(data.message || `Failed to ${isEditing ? "update" : "add"} table`);
       }
     } catch (e) {
       toast.error("Network error");
     }
+  };
+
+  const handleEditTable = (t: any) => {
+    setEditingTableId(t.id);
+    setNewTable({
+      name: t.name,
+      capacity: t.capacity,
+      quantity: t.quantity || 1,
+      restaurantId: t.restaurant?._id || t.restaurant || "",
+    });
+  };
+
+  const cancelEditTable = () => {
+    setEditingTableId(null);
+    setNewTable({ name: "", capacity: 2, quantity: 1, restaurantId: restaurants.length > 0 ? restaurants[0]._id : "" });
   };
 
   const removeTable = async (id: string) => {
@@ -188,7 +235,52 @@ function AdminPage() {
       toast.error("Network error");
     }
   };
+  const addRestaurant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRestaurant.name.trim()) return;
+    try {
+      const res = await fetch("/api/restaurants", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ 
+          name: newRestaurant.name.trim(), 
+          location: { address: newRestaurant.location },
+          cuisine: newRestaurant.cuisine,
+          costForTwo: Number(newRestaurant.costForTwo)
+        }),
+      });
+      if (res.ok) {
+        setNewRestaurant({ name: "", location: "", cuisine: "", costForTwo: 500 });
+        toast.success("Restaurant added");
+        loadRestaurants();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to add restaurant");
+      }
+    } catch (e) {
+      toast.error("Network error");
+    }
+  };
 
+  const removeRestaurant = async (id: string) => {
+    try {
+      const res = await fetch(`/api/restaurants/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        toast.success("Restaurant removed");
+        loadRestaurants();
+      } else {
+        toast.error("Failed to remove restaurant");
+      }
+    } catch (e) {
+      toast.error("Network error");
+    }
+  };
   if (authLoading || role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -204,11 +296,12 @@ function AdminPage() {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="max-w-6xl mx-auto px-4 py-8"
+        className="container mx-auto px-4 py-8"
       >
-        <Tabs defaultValue="reservations">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-4 bg-background/50 backdrop-blur-md">
             <TabsTrigger value="reservations">Reservations</TabsTrigger>
+            <TabsTrigger value="restaurants">Restaurants</TabsTrigger>
             <TabsTrigger value="tables">Tables</TabsTrigger>
           </TabsList>
 
@@ -317,6 +410,117 @@ function AdminPage() {
             </motion.div>
           </TabsContent>
 
+          <TabsContent value="restaurants">
+            <div className="grid gap-6 md:grid-cols-3">
+              <motion.div variants={itemVariants} className="md:col-span-1 h-fit">
+                <Card className="glass-panel">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <Plus className="h-5 w-5 text-primary" /> Add restaurant
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={addRestaurant} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Name</Label>
+                        <Input
+                          value={newRestaurant.name}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, name: e.target.value }))}
+                          placeholder="Spice Garden"
+                          required
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Location</Label>
+                        <Input
+                          value={newRestaurant.location}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, location: e.target.value }))}
+                          placeholder="123 Main St"
+                          required
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cuisine</Label>
+                        <Input
+                          value={newRestaurant.cuisine}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, cuisine: e.target.value }))}
+                          placeholder="Indian"
+                          required
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Cost for Two (₹)</Label>
+                        <Input
+                          type="number"
+                          value={newRestaurant.costForTwo}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, costForTwo: Number(e.target.value) || 0 }))}
+                          required
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <Button type="submit" className="w-full shadow-md">
+                        Add restaurant
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+
+              <motion.div variants={itemVariants} className="md:col-span-2">
+                <Card className="glass-panel min-h-[400px]">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Restaurants</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border border-primary/10 overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-primary/5">
+                          <TableRow>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Cuisine</TableHead>
+                            <TableHead>Location</TableHead>
+                            <TableHead />
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <AnimatePresence>
+                            {restaurants.map((r) => (
+                              <motion.tr
+                                key={r._id}
+                                initial={{ opacity: 0, scale: 0.98 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.98 }}
+                                layout
+                                className="group hover:bg-primary/5 border-b border-primary/5"
+                              >
+                                <TableCell className="font-medium">{r.name}</TableCell>
+                                <TableCell>{r.cuisine}</TableCell>
+                                <TableCell>{r.location.address}</TableCell>
+                                <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeRestaurant(r._id)}
+                                    className="transition-opacity"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
+                                </TableCell>
+                              </motion.tr>
+                            ))}
+                          </AnimatePresence>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </div>
+          </TabsContent>
+
           <TabsContent value="tables">
             <div className="grid gap-6 md:grid-cols-3">
               <motion.div variants={itemVariants} className="md:col-span-1 h-fit">
@@ -328,6 +532,27 @@ function AdminPage() {
                   </CardHeader>
                   <CardContent>
                     <form onSubmit={addTable} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Restaurant</Label>
+                        <select
+                          className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          value={newTable.restaurantId}
+                          onChange={(e) => {
+                            if (e.target.value === "ADD_NEW") {
+                              setActiveTab("restaurants");
+                            } else {
+                              setNewTable((v) => ({ ...v, restaurantId: e.target.value }));
+                            }
+                          }}
+                          required
+                        >
+                          <option value="" disabled>Select a restaurant</option>
+                          {restaurants.map((r) => (
+                            <option key={r._id} value={r._id}>{r.name}</option>
+                          ))}
+                          <option value="ADD_NEW" className="font-bold text-primary bg-primary/5">+ Add new restaurant</option>
+                        </select>
+                      </div>
                       <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
@@ -351,9 +576,29 @@ function AdminPage() {
                           className="bg-background/50"
                         />
                       </div>
-                      <Button type="submit" className="w-full shadow-md">
-                        Add table
-                      </Button>
+                      <div className="space-y-2">
+                        <Label>Quantity</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={50}
+                          value={newTable.quantity}
+                          onChange={(e) =>
+                            setNewTable((v) => ({ ...v, quantity: Number(e.target.value) || 1 }))
+                          }
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="submit" className="flex-1 shadow-md">
+                          {editingTableId ? "Update table" : "Add table"}
+                        </Button>
+                        {editingTableId && (
+                          <Button type="button" variant="outline" onClick={cancelEditTable}>
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </form>
                   </CardContent>
                 </Card>
@@ -370,8 +615,10 @@ function AdminPage() {
                       <Table>
                         <TableHeader className="bg-primary/5">
                           <TableRow>
+                            <TableHead>Restaurant</TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Capacity</TableHead>
+                            <TableHead>Quantity</TableHead>
                             <TableHead />
                           </TableRow>
                         </TableHeader>
@@ -386,9 +633,22 @@ function AdminPage() {
                                 layout
                                 className="group hover:bg-primary/5 border-b border-primary/5"
                               >
+                                <TableCell className="text-muted-foreground">
+                                  {/* @ts-ignore */}
+                                  {t.restaurant?.name || "Unknown"}
+                                </TableCell>
                                 <TableCell className="font-medium">{t.name}</TableCell>
                                 <TableCell>{t.capacity}</TableCell>
+                                <TableCell>{t.quantity || 1}</TableCell>
                                 <TableCell className="text-right">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditTable(t)}
+                                    className="transition-opacity mr-1"
+                                  >
+                                    <Edit2 className="h-4 w-4 text-primary" />
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"

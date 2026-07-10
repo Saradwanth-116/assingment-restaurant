@@ -8,7 +8,7 @@ const { authMiddleware, adminMiddleware } = require("../middleware/auth");
 // @access  Private
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const tables = await Table.find().sort({ name: 1 });
+    const tables = await Table.find().populate("restaurant", "name").sort({ name: 1 });
     res.json(tables);
   } catch (err) {
     console.error(err.message);
@@ -20,18 +20,57 @@ router.get("/", authMiddleware, async (req, res) => {
 // @desc    Create a table
 // @access  Private/Admin
 router.post("/", [authMiddleware, adminMiddleware], async (req, res) => {
-  const { name, capacity } = req.body;
+  const { name, capacity, quantity, restaurantId } = req.body;
 
   try {
-    let table = await Table.findOne({ name });
+    if (!restaurantId) {
+      return res.status(400).json({ message: "Restaurant ID is required" });
+    }
+
+    let table = await Table.findOne({ name, restaurant: restaurantId });
     if (table) {
-      return res.status(400).json({ message: "Table already exists" });
+      return res.status(400).json({ message: "Table already exists for this restaurant" });
     }
 
     table = new Table({
       name,
       capacity,
+      quantity: quantity || 1,
+      restaurant: restaurantId,
     });
+
+    await table.save();
+    res.json(table);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
+// @route   PUT /api/tables/:id
+// @desc    Update a table
+// @access  Private/Admin
+router.put("/:id", [authMiddleware, adminMiddleware], async (req, res) => {
+  const { name, capacity, quantity, restaurantId } = req.body;
+
+  try {
+    let table = await Table.findById(req.params.id);
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
+    }
+
+    // Check if the new name conflicts with another table in the same restaurant
+    if (name && name !== table.name) {
+      const existing = await Table.findOne({ name, restaurant: restaurantId || table.restaurant });
+      if (existing && existing._id.toString() !== req.params.id) {
+        return res.status(400).json({ message: "Table name already exists for this restaurant" });
+      }
+    }
+
+    if (name) table.name = name;
+    if (capacity) table.capacity = capacity;
+    if (quantity !== undefined) table.quantity = quantity;
+    if (restaurantId) table.restaurant = restaurantId;
 
     await table.save();
     res.json(table);

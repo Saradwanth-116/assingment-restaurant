@@ -9,7 +9,7 @@ interface AuroraProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export const Aurora = ({
   className,
-  colorStops = ["#ff00a28f", "#00f832ff", "#ffa600ff"],
+  colorStops = ["#ff003745", "#00f83273", "#ffa600b9"],
   ...props
 }: AuroraProps) => {
   return (

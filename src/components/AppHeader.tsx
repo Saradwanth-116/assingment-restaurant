@@ -23,11 +23,24 @@ export function AppHeader({ role, email }: { role: AppRole | null; email?: strin
           <span className="text-xl font-bold tracking-tight">Tavola</span>
         </Link>
         <div className="flex items-center gap-2 sm:gap-6">
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm">
-              My reservations
-            </Button>
-          </Link>
+          {role && (
+            <>
+              <Link
+                to="/restaurants"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                activeProps={{ className: "text-primary font-semibold" }}
+              >
+                Restaurants
+              </Link>
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                activeProps={{ className: "text-primary font-semibold" }}
+              >
+                My Reservations
+              </Link>
+            </>
+          )}
           {role === "admin" && (
             <Link to="/admin">
               <Button variant="ghost" size="sm">

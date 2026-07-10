@@ -38,6 +38,7 @@ app.use(async (req, res, next) => {
 
 // API Routes
 app.use("/api/auth", require("./routes/auth"));
+app.use("/api/restaurants", require("./routes/restaurants"));
 app.use("/api/tables", require("./routes/tables"));
 app.use("/api/reservations", require("./routes/reservations"));
 

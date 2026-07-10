@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useSearch } from "@tanstack/react-router";
 import {
   Select,
   SelectContent,
@@ -37,14 +38,14 @@ export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
 
-type RTable = { id: string; name: string; capacity: number };
+type RTable = { id: string; name: string; capacity: number; quantity: number };
 type Reservation = {
   _id: string;
   reservationDate: string;
   timeSlot: string;
   guests: number;
   status: string;
-  table: { _id: string; name: string; capacity: number } | null;
+  table: { _id: string; name: string; capacity: number; restaurant?: { name: string } } | null;
 };
 
 const containerVariants = {
@@ -62,8 +63,14 @@ const itemVariants = {
 
 function Dashboard() {
   const navigate = useNavigate();
+  // @ts-ignore
+  const searchParams = useSearch({ strict: false }) as { restaurantId?: string };
+  const restaurantId = searchParams.restaurantId;
+
   const { user, role, loading: authLoading } = useAuth();
-  const [tables, setTables] = useState<RTable[]>([]);
+  const [allTables, setAllTables] = useState<RTable[]>([]);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<string>(restaurantId || "");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
   const [date, setDate] = useState(todayISO());
@@ -71,25 +78,31 @@ function Dashboard() {
   const [guests, setGuests] = useState(2);
   const [tableId, setTableId] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
-  const [takenTables, setTakenTables] = useState<Set<string>>(new Set());
+  const [takenTables, setTakenTables] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (!authLoading && !user) navigate({ to: "/auth" });
   }, [authLoading, user, navigate]);
 
-  const loadTables = async () => {
+  const loadData = async () => {
     try {
-      const res = await fetch("/api/tables", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const formatted = data.map((d: { _id: string; [key: string]: unknown }) => ({
+      const [resTables, resRest] = await Promise.all([
+        fetch("/api/tables", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }),
+        fetch("/api/restaurants", { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      ]);
+      
+      if (resRest.ok) {
+        const rData = await resRest.json();
+        setRestaurants(rData);
+      }
+      
+      if (resTables.ok) {
+        const data = await resTables.json();
+        let formatted = data.map((d: { _id: string; [key: string]: unknown }) => ({
           ...d,
           id: d._id,
         }));
-        setTables(formatted as RTable[]);
-        if (formatted.length && !tableId) setTableId(formatted[0].id);
+        setAllTables(formatted as RTable[]);
       }
     } catch (e) {
       console.error(e);
@@ -121,17 +134,20 @@ function Dashboard() {
       });
       if (res.ok) {
         const data = await res.json();
-        const taken = data
+        const counts: Record<string, number> = {};
+        data
           .filter(
             (r: { reservationDate: string; timeSlot: string; status: string }) =>
               r.reservationDate === date && r.timeSlot === slot && r.status === "active",
           )
-          .map((r: { table?: { _id: string } | string }) =>
-            typeof r.table === "object" && r.table !== null && "_id" in r.table
-              ? r.table._id
-              : r.table,
-          );
-        setTakenTables(new Set(taken as string[]));
+          .forEach((r: { table?: { _id: string } | string }) => {
+            const tId =
+              typeof r.table === "object" && r.table !== null && "_id" in r.table
+                ? r.table._id
+                : r.table;
+            if (tId) counts[tId as string] = (counts[tId as string] || 0) + 1;
+          });
+        setTakenTables(counts);
       }
     } catch (e) {
       console.error(e);
@@ -139,7 +155,7 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    loadTables();
+    loadData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -150,7 +166,24 @@ function Dashboard() {
     loadAvailability();
   }, [date, slot]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const availableTables = tables.filter((t) => !takenTables.has(t.id) && t.capacity >= guests);
+  const filteredTables = allTables.filter((t: any) => {
+    if (selectedRestaurantId && t.restaurant?._id !== selectedRestaurantId && t.restaurant !== selectedRestaurantId) return false;
+    return true;
+  });
+
+  const availableTables = filteredTables.filter((t) => {
+    const takenCount = takenTables[t.id] || 0;
+    const quantity = t.quantity || 1;
+    return takenCount < quantity && t.capacity >= guests;
+  });
+
+  useEffect(() => {
+    if (filteredTables.length > 0 && (!tableId || !filteredTables.find(t => t.id === tableId))) {
+      setTableId(filteredTables[0].id);
+    } else if (filteredTables.length === 0) {
+      setTableId("");
+    }
+  }, [filteredTables, tableId]);
 
   const createReservation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,14 +192,15 @@ function Dashboard() {
       toast.error("Pick a table");
       return;
     }
-    const chosen = tables.find((t) => t.id === tableId);
+    const chosen = allTables.find((t) => t.id === tableId);
     if (!chosen) return;
     if (chosen.capacity < guests) {
       toast.error(`Table ${chosen.name} seats only ${chosen.capacity}.`);
       return;
     }
-    if (takenTables.has(tableId)) {
-      toast.error("That table is already booked for that slot.");
+    const takenCount = takenTables[tableId] || 0;
+    if (takenCount >= (chosen.quantity || 1)) {
+      toast.error("That table type is fully booked for that slot.");
       return;
     }
     if (date < todayISO()) {
@@ -248,10 +282,34 @@ function Dashboard() {
               <CardTitle className="flex items-center gap-2 text-xl">
                 <CalendarPlus className="h-5 w-5 text-primary" /> New reservation
               </CardTitle>
-              <CardDescription>Pick a date, time, party size, and table.</CardDescription>
+              <CardDescription>
+                {restaurantId ? "Booking for selected restaurant." : "Pick a date, time, party size, and table."}
+                {!restaurantId && (
+                  <Button variant="link" className="p-0 h-auto ml-1" onClick={() => navigate({ to: "/restaurants" })}>
+                    Browse restaurants instead
+                  </Button>
+                )}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={createReservation} className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Restaurant</Label>
+                  <Select value={selectedRestaurantId} onValueChange={(val) => {
+                    setSelectedRestaurantId(val);
+                    navigate({ to: `/dashboard`, search: val ? { restaurantId: val } : {} });
+                  }}>
+                    <SelectTrigger className="bg-background/50">
+                      <SelectValue placeholder="Any restaurant" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Restaurants</SelectItem>
+                      {restaurants.map(r => (
+                        <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label>Date</Label>
                   <Input
@@ -297,13 +355,16 @@ function Dashboard() {
                       <SelectValue placeholder="Choose a table" />
                     </SelectTrigger>
                     <SelectContent>
-                      {tables.map((t) => {
-                        const taken = takenTables.has(t.id);
+                      {filteredTables.map((t) => {
+                        const takenCount = takenTables[t.id] || 0;
+                        const quantity = t.quantity || 1;
+                        const remaining = quantity - takenCount;
+                        const fullyBooked = remaining <= 0;
                         const small = t.capacity < guests;
                         return (
-                          <SelectItem key={t.id} value={t.id} disabled={taken || small}>
+                          <SelectItem key={t.id} value={t.id} disabled={fullyBooked || small}>
                             {t.name} · seats {t.capacity}
-                            {taken ? " · booked" : small ? " · too small" : ""}
+                            {fullyBooked ? " · fully booked" : small ? " · too small" : ` · ${remaining} available`}
                           </SelectItem>
                         );
                       })}
@@ -354,6 +415,7 @@ function Dashboard() {
                         <TableHead>Date</TableHead>
                         <TableHead>Time</TableHead>
                         <TableHead>Guests</TableHead>
+                        <TableHead>Restaurant</TableHead>
                         <TableHead>Table</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead />
@@ -375,6 +437,7 @@ function Dashboard() {
                             </TableCell>
                             <TableCell>{r.timeSlot}</TableCell>
                             <TableCell>{r.guests}</TableCell>
+                            <TableCell className="text-muted-foreground">{r.table?.restaurant?.name ?? "Unknown"}</TableCell>
                             <TableCell>{r.table?.name ?? "—"}</TableCell>
                             <TableCell>
                               <Badge

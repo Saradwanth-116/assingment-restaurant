@@ -83,9 +83,9 @@ export function RestaurantCard({
           Member Discount
         </Badge>
         
-        <p className="text-sm text-muted-foreground mb-1 font-medium">{restaurant.cuisine}</p>
+        <p className="text-sm text-slate-700 mb-1 font-medium">{restaurant.cuisine}</p>
         
-        <div className="flex items-center text-sm text-muted-foreground mb-2 gap-1.5 line-clamp-1">
+        <div className="flex items-center text-sm text-slate-700 mb-2 gap-1.5 line-clamp-1">
           <MapPin className="w-4 h-4 shrink-0 text-primary" />
           {restaurant.location.address}
         </div>

@@ -3,35 +3,48 @@ import { cn } from "@/lib/utils";
 
 interface AuroraProps extends React.HTMLAttributes<HTMLDivElement> {
   colorStops?: string[];
-  amplitude?: number;
-  blend?: number;
 }
 
 export const Aurora = ({
   className,
-  colorStops = ["#ff003745", "#00f83273", "#ffa600b9"],
+  colorStops = ["#5e60cebb", "#6830c3d4", "#7500b8d3"],
   ...props
 }: AuroraProps) => {
   return (
     <div className={cn("fixed inset-0 z-[-1] overflow-hidden bg-slate-50", className)} {...props}>
       <div
-        className="absolute w-[300vw] h-[300vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.48] blur-[100px] filter"
+        className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] rounded-full opacity-70 blur-[120px] mix-blend-multiply"
         style={{
-          background: `conic-gradient(from 90deg at 50% 50%, ${colorStops[0]}, ${colorStops[1]}, ${colorStops[2]}, ${colorStops[0]})`,
-          animation: "spin 10s linear infinite",
+          background: `radial-gradient(circle, ${colorStops[0]} 0%, transparent 70%)`,
+          animation: "float1 1s ease-in-out infinite alternate",
         }}
       />
       <div
-        className="absolute w-[300vw] h-[300vw] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.48] blur-[100px] filter"
+        className="absolute top-[20%] right-[-10%] w-[70%] h-[70%] rounded-full opacity-70 blur-[120px] mix-blend-multiply"
         style={{
-          background: `conic-gradient(from 270deg at 50% 50%, ${colorStops[2]}, ${colorStops[1]}, ${colorStops[0]}, ${colorStops[2]})`,
-          animation: "spin 30s linear infinite reverse",
+          background: `radial-gradient(circle, ${colorStops[1]} 0%, transparent 70%)`,
+          animation: "float2 2s ease-in-out infinite alternate-reverse",
+        }}
+      />
+      <div
+        className="absolute bottom-[-20%] left-[10%] w-[80%] h-[80%] rounded-full opacity-70 blur-[120px] mix-blend-multiply"
+        style={{
+          background: `radial-gradient(circle, ${colorStops[2]} 0%, transparent 70%)`,
+          animation: "float3 1s ease-in-out infinite alternate",
         }}
       />
       <style>{`
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        @keyframes float1 {
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(10%, 15%) scale(1.1); }
+        }
+        @keyframes float2 {
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(-15%, 10%) scale(0.9); }
+        }
+        @keyframes float3 {
+          0% { transform: translate(0, 0) scale(1); }
+          100% { transform: translate(15%, -15%) scale(1.05); }
         }
       `}</style>
     </div>

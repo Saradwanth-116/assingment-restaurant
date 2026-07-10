@@ -73,7 +73,7 @@ export function RestaurantCard({
       <CardContent className="p-4">
         <div className="flex justify-between items-start mb-2">
           <h3 className="font-bold text-lg leading-tight line-clamp-1">{restaurant.name}</h3>
-          <div className="flex items-center gap-1 text-sm bg-green-700 text-white px-1.5 py-0.5 rounded shadow-sm font-medium">
+          <div className="flex items-center gap-1 text-sm bg-primary text-white px-1.5 py-0.5 rounded shadow-sm font-medium">
             {restaurant.rating.toFixed(1)} <Star className="w-3 h-3 fill-current" />
           </div>
         </div>
@@ -93,7 +93,7 @@ export function RestaurantCard({
         <p className="text-sm font-semibold mb-4 text-foreground">₹{restaurant.costForTwo} for 2</p>
         
         <div className="flex gap-2">
-          <Badge variant="secondary" className="bg-green-50 text-green-700 hover:bg-green-100 transition-colors border border-green-200">
+          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 transition-colors border border-primary/20">
             Reservation Guarantee
           </Badge>
           <Badge variant="secondary" className="bg-orange-50 text-orange-700 hover:bg-orange-100 transition-colors border border-orange-200">

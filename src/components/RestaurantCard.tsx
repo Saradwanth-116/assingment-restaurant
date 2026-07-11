@@ -16,6 +16,7 @@ export type RestaurantInfo = {
   isTrending: boolean;
   isTopRated: boolean;
   isPremium: boolean;
+  menuLink?: string;
 };
 
 export function RestaurantCard({
@@ -101,8 +102,15 @@ export function RestaurantCard({
           </Badge>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-border/50">
-          <Link to="/dashboard" search={{ restaurantId: restaurant._id }} className="w-full">
+        <div className="mt-4 pt-4 border-t border-border/50 flex flex-col gap-2">
+          {restaurant.menuLink && (
+            <a href={restaurant.menuLink} target="_blank" rel="noopener noreferrer" className="w-full" onClick={(e) => e.stopPropagation()}>
+              <Button className="w-full shadow-sm" variant="outline">
+                Explore Menu
+              </Button>
+            </a>
+          )}
+          <Link to="/dashboard" search={{ restaurantId: restaurant._id }} className="w-full" onClick={(e) => e.stopPropagation()}>
             <Button className="w-full shadow-sm" variant="default">
               Book a Table
             </Button>

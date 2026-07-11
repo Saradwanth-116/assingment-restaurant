@@ -40,6 +40,7 @@ const RestaurantSchema = new mongoose.Schema(
     isTrending: { type: Boolean, default: false },
     isTopRated: { type: Boolean, default: false },
     isPremium: { type: Boolean, default: false },
+    menuLink: { type: String, default: "" },
     menu: {
       starters: [MenuItemSchema],
       mainCourse: [MenuItemSchema],

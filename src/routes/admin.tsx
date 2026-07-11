@@ -68,7 +68,7 @@ function AdminPage() {
   const [activeTab, setActiveTab] = useState("reservations");
   const [newTable, setNewTable] = useState({ name: "", capacity: 2, quantity: 1, restaurantId: "" });
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
-  const [newRestaurant, setNewRestaurant] = useState({ name: "", location: "", cuisine: "", costForTwo: 500 });
+  const [newRestaurant, setNewRestaurant] = useState({ name: "", location: "", cuisine: "", costForTwo: 500, menuLink: "", imageUrl: "" });
   const [editingRes, setEditingRes] = useState<ResRow | null>(null);
   const [editResForm, setEditResForm] = useState({
     date: "",
@@ -78,6 +78,9 @@ function AdminPage() {
     tableId: "",
   });
   const [updatingRes, setUpdatingRes] = useState(false);
+  const [editingRestaurantId, setEditingRestaurantId] = useState<string | null>(null);
+  const [editRestaurantForm, setEditRestaurantForm] = useState({ name: "", location: "", cuisine: "", costForTwo: 500, menuLink: "", imageUrl: "" });
+  const [updatingRestaurant, setUpdatingRestaurant] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -304,11 +307,13 @@ function AdminPage() {
           name: newRestaurant.name.trim(), 
           location: { address: newRestaurant.location },
           cuisine: newRestaurant.cuisine,
-          costForTwo: Number(newRestaurant.costForTwo)
+          costForTwo: Number(newRestaurant.costForTwo),
+          menuLink: newRestaurant.menuLink.trim() || undefined,
+          images: newRestaurant.imageUrl.trim() ? [newRestaurant.imageUrl.trim()] : undefined
         }),
       });
       if (res.ok) {
-        setNewRestaurant({ name: "", location: "", cuisine: "", costForTwo: 500 });
+        setNewRestaurant({ name: "", location: "", cuisine: "", costForTwo: 500, menuLink: "", imageUrl: "" });
         toast.success("Restaurant added");
         loadRestaurants();
       } else {
@@ -336,6 +341,54 @@ function AdminPage() {
       toast.error("Network error");
     }
   };
+
+  const handleEditRestaurantClick = (r: any) => {
+    setEditingRestaurantId(r._id);
+    setEditRestaurantForm({
+      name: r.name || "",
+      location: r.location?.address || "",
+      cuisine: r.cuisine || "",
+      costForTwo: r.costForTwo || 500,
+      menuLink: r.menuLink || "",
+      imageUrl: r.images?.[0] || ""
+    });
+  };
+
+  const updateRestaurant = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRestaurantId || !editRestaurantForm.name.trim()) return;
+    setUpdatingRestaurant(true);
+    try {
+      const res = await fetch(`/api/restaurants/${editingRestaurantId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          name: editRestaurantForm.name.trim(),
+          location: { address: editRestaurantForm.location },
+          cuisine: editRestaurantForm.cuisine,
+          costForTwo: Number(editRestaurantForm.costForTwo),
+          menuLink: editRestaurantForm.menuLink.trim() || undefined,
+          images: editRestaurantForm.imageUrl.trim() ? [editRestaurantForm.imageUrl.trim()] : undefined
+        }),
+      });
+      if (res.ok) {
+        toast.success("Restaurant updated");
+        setEditingRestaurantId(null);
+        loadRestaurants();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to update restaurant");
+      }
+    } catch (e) {
+      toast.error("Network error");
+    } finally {
+      setUpdatingRestaurant(false);
+    }
+  };
+
   if (authLoading || role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-muted/30">
@@ -521,6 +574,24 @@ function AdminPage() {
                           className="bg-background/50"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label>Menu Link (Optional)</Label>
+                        <Input
+                          value={newRestaurant.menuLink}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, menuLink: e.target.value }))}
+                          placeholder="https://drive.google.com/..."
+                          className="bg-background/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Image URL (Optional)</Label>
+                        <Input
+                          value={newRestaurant.imageUrl}
+                          onChange={(e) => setNewRestaurant((v) => ({ ...v, imageUrl: e.target.value }))}
+                          placeholder="https://images.unsplash.com/..."
+                          className="bg-background/50"
+                        />
+                      </div>
                       <Button type="submit" className="w-full shadow-md">
                         Add restaurant
                       </Button>
@@ -559,7 +630,15 @@ function AdminPage() {
                                 <TableCell className="font-medium">{r.name}</TableCell>
                                 <TableCell>{r.cuisine}</TableCell>
                                 <TableCell>{r.location.address}</TableCell>
-                                <TableCell className="text-right">
+                                <TableCell className="text-right space-x-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditRestaurantClick(r)}
+                                    className="transition-opacity"
+                                  >
+                                    <Edit2 className="h-4 w-4 text-primary" />
+                                  </Button>
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -817,6 +896,81 @@ function AdminPage() {
             )}
           </DialogContent>
         </Dialog>
+
+      {/* Edit Restaurant Dialog */}
+      <Dialog open={!!editingRestaurantId} onOpenChange={(open) => !open && setEditingRestaurantId(null)}>
+        <DialogContent className="glass-panel">
+          <DialogHeader>
+            <DialogTitle>Edit Restaurant</DialogTitle>
+            <DialogDescription>
+              Modify the details for this restaurant.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={updateRestaurant} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={editRestaurantForm.name}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, name: e.target.value }))}
+                required
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Input
+                value={editRestaurantForm.location}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, location: e.target.value }))}
+                required
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cuisine</Label>
+              <Input
+                value={editRestaurantForm.cuisine}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, cuisine: e.target.value }))}
+                required
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Cost for Two (₹)</Label>
+              <Input
+                type="number"
+                value={editRestaurantForm.costForTwo}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, costForTwo: Number(e.target.value) || 0 }))}
+                required
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Menu Link (Optional)</Label>
+              <Input
+                value={editRestaurantForm.menuLink}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, menuLink: e.target.value }))}
+                className="bg-background/50"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Image URL (Optional)</Label>
+              <Input
+                value={editRestaurantForm.imageUrl}
+                onChange={(e) => setEditRestaurantForm((v) => ({ ...v, imageUrl: e.target.value }))}
+                className="bg-background/50"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setEditingRestaurantId(null)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={updatingRestaurant}>
+                {updatingRestaurant ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
       </motion.main>
     </div>
   );

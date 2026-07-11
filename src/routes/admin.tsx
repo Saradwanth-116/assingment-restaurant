@@ -180,7 +180,20 @@ function AdminPage() {
   };
 
   const remove = async (id: string) => {
-    await cancel(id);
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        toast.success("Reservation deleted");
+        load();
+      } else {
+        toast.error("Failed to delete reservation");
+      }
+    } catch (e) {
+      toast.error("Network error");
+    }
   };
 
   const handleEditResClick = (r: ResRow) => {

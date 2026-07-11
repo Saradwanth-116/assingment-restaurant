@@ -167,4 +167,21 @@ router.put("/:id", [authMiddleware, adminMiddleware], async (req, res) => {
   }
 });
 
+// @route   DELETE /api/reservations/:id
+// @desc    Delete a reservation (Admin only)
+// @access  Private
+router.delete("/:id", [authMiddleware, adminMiddleware], async (req, res) => {
+  try {
+    const reservation = await Reservation.findById(req.params.id);
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+    await reservation.deleteOne();
+    res.json({ message: "Reservation removed" });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;

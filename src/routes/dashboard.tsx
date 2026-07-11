@@ -45,6 +45,7 @@ type Reservation = {
   timeSlot: string;
   guests: number;
   status: string;
+  isModifiedByAdmin?: boolean;
   table: { _id: string; name: string; capacity: number; restaurant?: { name: string } } | null;
 };
 
@@ -446,6 +447,11 @@ function Dashboard() {
                               >
                                 {r.status}
                               </Badge>
+                              {r.isModifiedByAdmin && (
+                                <Badge variant="outline" className="ml-2 text-[10px] border-orange-300 text-orange-600 bg-orange-50">
+                                  Modified by Admin
+                                </Badge>
+                              )}
                             </TableCell>
                             <TableCell className="text-right">
                               {r.status === "active" && (

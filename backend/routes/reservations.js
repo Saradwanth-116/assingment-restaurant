@@ -110,4 +110,61 @@ router.patch("/:id/cancel", authMiddleware, async (req, res) => {
   }
 });
 
+// @route   PUT /api/reservations/:id
+// @desc    Update a reservation (Admin only)
+// @access  Private
+router.put("/:id", [authMiddleware, adminMiddleware], async (req, res) => {
+  const { tableId, reservationDate, timeSlot, guests } = req.body;
+
+  try {
+    let reservation = await Reservation.findById(req.params.id);
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
+
+    // Check if table exists
+    const table = await Table.findById(tableId);
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
+    }
+
+    // Validation: Check table capacity
+    if (guests > table.capacity) {
+      return res
+        .status(400)
+        .json({ message: `Guest count (${guests}) exceeds table capacity (${table.capacity})` });
+    }
+
+    // Validation: Prevent overlapping reservations exceeding table quantity
+    // Exclude the current reservation from the count
+    const activeReservationsCount = await Reservation.countDocuments({
+      _id: { $ne: req.params.id },
+      table: tableId,
+      reservationDate,
+      timeSlot,
+      status: "active",
+    });
+
+    const quantity = table.quantity || 1;
+    if (activeReservationsCount >= quantity) {
+      return res
+        .status(400)
+        .json({ message: "All tables of this type are already booked for the selected time slot" });
+    }
+
+    // Update reservation
+    reservation.table = tableId;
+    reservation.reservationDate = reservationDate;
+    reservation.timeSlot = timeSlot;
+    reservation.guests = guests;
+    reservation.isModifiedByAdmin = true;
+
+    await reservation.save();
+    res.json(reservation);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+});
+
 module.exports = router;

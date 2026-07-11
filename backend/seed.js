@@ -4,7 +4,7 @@ const Restaurant = require("./models/Restaurant");
 const Table = require("./models/Table");
 
 // Connect to MongoDB
-const uri = "mongodb://gigachad:gigachad6767@ac-c5uahwh-shard-00-00.eomi7vx.mongodb.net:27017,ac-c5uahwh-shard-00-01.eomi7vx.mongodb.net:27017,ac-c5uahwh-shard-00-02.eomi7vx.mongodb.net:27017/test?ssl=true&replicaSet=atlas-tztxm7-shard-0&authSource=admin&retryWrites=true&w=majority&appName=Cluster0";
+const uri = process.env.MONGO_URI;
 
 const seedData = async () => {
   try {

@@ -30,6 +30,10 @@ const ReservationSchema = new mongoose.Schema(
       enum: ["active", "cancelled"],
       default: "active",
     },
+    isModifiedByAdmin: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

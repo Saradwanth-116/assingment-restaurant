@@ -16,7 +16,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { formatDate, todayISO } from "@/lib/reservations";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { formatDate, todayISO, TIME_SLOTS } from "@/lib/reservations";
 import { toast } from "sonner";
 import { UtensilsCrossed, Plus, Trash2, CalendarX, Edit2, Loader2, XCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -39,7 +41,7 @@ type ResRow = {
   guests: number;
   status: string;
   user: { _id: string; name: string } | null;
-  table: { name: string } | null;
+  table: { _id: string; name: string; capacity: number; restaurant?: { _id: string; name: string } } | null;
 };
 
 const containerVariants = {
@@ -67,6 +69,15 @@ function AdminPage() {
   const [newTable, setNewTable] = useState({ name: "", capacity: 2, quantity: 1, restaurantId: "" });
   const [editingTableId, setEditingTableId] = useState<string | null>(null);
   const [newRestaurant, setNewRestaurant] = useState({ name: "", location: "", cuisine: "", costForTwo: 500 });
+  const [editingRes, setEditingRes] = useState<ResRow | null>(null);
+  const [editResForm, setEditResForm] = useState({
+    date: "",
+    timeSlot: "",
+    guests: 2,
+    restaurantId: "",
+    tableId: "",
+  });
+  const [updatingRes, setUpdatingRes] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -167,6 +178,50 @@ function AdminPage() {
 
   const remove = async (id: string) => {
     await cancel(id);
+  };
+
+  const handleEditResClick = (r: ResRow) => {
+    setEditingRes(r);
+    setEditResForm({
+      date: r.reservationDate,
+      timeSlot: r.timeSlot,
+      guests: r.guests,
+      restaurantId: r.table?.restaurant?._id || "",
+      tableId: r.table?._id || "",
+    });
+  };
+
+  const updateReservation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRes || !editResForm.tableId) return;
+    setUpdatingRes(true);
+    try {
+      const res = await fetch(`/api/reservations/${editingRes._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          tableId: editResForm.tableId,
+          reservationDate: editResForm.date,
+          timeSlot: editResForm.timeSlot,
+          guests: editResForm.guests,
+        }),
+      });
+      if (res.ok) {
+        toast.success("Reservation updated");
+        setEditingRes(null);
+        load();
+      } else {
+        const data = await res.json();
+        toast.error(data.message || "Failed to update reservation");
+      }
+    } catch (e) {
+      toast.error("Network error");
+    } finally {
+      setUpdatingRes(false);
+    }
   };
 
   const addTable = async (e: React.FormEvent) => {
@@ -390,9 +445,14 @@ function AdminPage() {
                                 </TableCell>
                                 <TableCell className="text-right space-x-1 transition-opacity">
                                   {r.status === "active" && (
-                                    <Button variant="ghost" size="sm" onClick={() => cancel(r._id)}>
-                                      <XCircle className="h-4 w-4" />
-                                    </Button>
+                                    <>
+                                      <Button variant="ghost" size="sm" onClick={() => handleEditResClick(r)}>
+                                        <Edit2 className="h-4 w-4 text-primary" />
+                                      </Button>
+                                      <Button variant="ghost" size="sm" onClick={() => cancel(r._id)}>
+                                        <XCircle className="h-4 w-4" />
+                                      </Button>
+                                    </>
                                   )}
                                   <Button variant="ghost" size="sm" onClick={() => remove(r._id)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
@@ -673,6 +733,90 @@ function AdminPage() {
         <p className="text-xs text-muted-foreground mt-4 text-center">
           Today is {formatDate(todayISO())}.
         </p>
+
+        {/* Edit Reservation Dialog */}
+        <Dialog open={!!editingRes} onOpenChange={(open) => !open && setEditingRes(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Edit Reservation</DialogTitle>
+              <DialogDescription>Modify the reservation details below.</DialogDescription>
+            </DialogHeader>
+            {editingRes && (
+              <form onSubmit={updateReservation} className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <Label>Restaurant</Label>
+                  <Select 
+                    value={editResForm.restaurantId} 
+                    onValueChange={(val) => setEditResForm(prev => ({ ...prev, restaurantId: val, tableId: "" }))}
+                  >
+                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select restaurant" /></SelectTrigger>
+                    <SelectContent>
+                      {restaurants.map(r => (
+                        <SelectItem key={r._id} value={r._id}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Table</Label>
+                  <Select 
+                    value={editResForm.tableId} 
+                    onValueChange={(val) => setEditResForm(prev => ({ ...prev, tableId: val }))}
+                  >
+                    <SelectTrigger className="bg-background"><SelectValue placeholder="Select table" /></SelectTrigger>
+                    <SelectContent>
+                      {tables.filter(t => (t as any).restaurant?._id === editResForm.restaurantId || (t as any).restaurant === editResForm.restaurantId).map(t => (
+                        <SelectItem key={t.id} value={t.id}>{t.name} (Seats {t.capacity})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Date</Label>
+                    <Input 
+                      type="date" 
+                      min={todayISO()}
+                      value={editResForm.date} 
+                      onChange={(e) => setEditResForm(prev => ({ ...prev, date: e.target.value }))}
+                      required 
+                      className="bg-background"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Time slot</Label>
+                    <Select 
+                      value={editResForm.timeSlot} 
+                      onValueChange={(val) => setEditResForm(prev => ({ ...prev, timeSlot: val }))}
+                    >
+                      <SelectTrigger className="bg-background"><SelectValue placeholder="Time" /></SelectTrigger>
+                      <SelectContent>
+                        {TIME_SLOTS.map(s => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Guests</Label>
+                  <Input 
+                    type="number" 
+                    min={1} max={20} 
+                    value={editResForm.guests} 
+                    onChange={(e) => setEditResForm(prev => ({ ...prev, guests: Number(e.target.value) || 1 }))}
+                    required 
+                    className="bg-background"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setEditingRes(null)}>Cancel</Button>
+                  <Button type="submit" disabled={updatingRes}>{updatingRes ? "Saving..." : "Save Changes"}</Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
       </motion.main>
     </div>
   );

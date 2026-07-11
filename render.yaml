@@ -6,6 +6,6 @@ services:
     startCommand: cd backend && node server.js
     envVars:
       - key: MONGO_URI
-        value: mongodb+srv://gigachad:gigachad6767@cluster0.eomi7vx.mongodb.net/?appName=Cluster0
+        sync: false
       - key: NODE_ENV
         value: production

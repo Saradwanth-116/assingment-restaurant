@@ -13,24 +13,24 @@ export const Aurora = ({
   return (
     <div className={cn("fixed inset-0 z-[-1] overflow-hidden bg-slate-50", className)} {...props}>
       <div
-        className="absolute top-[10%] left-[-10%] w-[60%] h-[60%] rounded-full opacity-100 blur-[150px] mix-blend-multiply"
+        className="absolute top-[10%] left-[-10%] w-[60%] h-[60%] rounded-full opacity-50 blur-3xl"
         style={{
-          background: `radial-gradient(circle, ${colorStops[0]} 0%, transparent 70%)`,
-          animation: "float1 3s ease-in-out infinite alternate",
+          background: `radial-gradient(circle at center, ${colorStops[0]} 0%, transparent 50%)`,
+          animation: "float1 20s ease-in-out infinite alternate",
         }}
       />
       <div
-        className="absolute top-[20%] right-[-20%] w-[70%] h-[70%] rounded-full opacity-100 blur-[150px] mix-blend-multiply"
+        className="absolute top-[20%] right-[-20%] w-[70%] h-[70%] rounded-full opacity-50 blur-3xl"
         style={{
-          background: `radial-gradient(circle, ${colorStops[1]} 0%, transparent 70%)`,
-          animation: "float2 3s ease-in-out infinite alternate-reverse",
+          background: `radial-gradient(circle at center, ${colorStops[1]} 0%, transparent 50%)`,
+          animation: "float2 25s ease-in-out infinite alternate-reverse",
         }}
       />
       <div
-        className="absolute bottom-[20%] left-[10%] w-[80%] h-[80%] rounded-full opacity-70 blur-[150px] mix-blend-multiply"
+        className="absolute bottom-[20%] left-[10%] w-[80%] h-[80%] rounded-full opacity-40 blur-3xl"
         style={{
-          background: `radial-gradient(circle, ${colorStops[2]} 0%, transparent 70%)`,
-          animation: "float3 3s ease-in-out infinite alternate",
+          background: `radial-gradient(circle at center, ${colorStops[2]} 0%, transparent 50%)`,
+          animation: "float3 22s ease-in-out infinite alternate",
         }}
       />
       <style>{`

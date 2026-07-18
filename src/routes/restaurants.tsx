@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { AppHeader } from "@/components/AppHeader";
+import { BottomDock } from "@/components/BottomDock";
 import { RestaurantCard, RestaurantInfo } from "@/components/RestaurantCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, Calendar, Users, Clock } from "lucide-react";
@@ -69,8 +69,8 @@ function RestaurantsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-muted/20 pb-12">
-      <AppHeader role={role} email={user?.email ?? undefined} />
+    <div className="min-h-screen bg-muted/20 pb-24">
+      <BottomDock role={role} email={user?.email ?? undefined} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">

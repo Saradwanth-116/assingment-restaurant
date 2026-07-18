@@ -1,7 +1,7 @@
 import { createLazyFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { AppHeader } from "@/components/AppHeader";
+import { BottomDock } from "@/components/BottomDock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -406,8 +406,8 @@ function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted/30 pb-12">
-      <AppHeader role={role} email={user?.email ?? undefined} />
+    <div className="min-h-screen bg-muted/30 pb-24">
+      <BottomDock role={role} email={user?.email ?? undefined} />
       <motion.main
         variants={containerVariants}
         initial="hidden"
